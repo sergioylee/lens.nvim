@@ -11,14 +11,12 @@ test:
 	nvim --headless -u tests/minimal_init.lua \
 		-c "PlenaryBustedDirectory tests/ {minimal_init = 'tests/minimal_init.lua', sequential = true}"
 
-## fix: Run linter & formatter
-fix:
-	luacheck src tests && stylua src tests
-
-## lint: Run linter
+## lint: Check code with luacheck
+.PHONY: lint
 lint:
-	luacheck lua/** tests
+	luacheck lua/ tests/
 
-## format: Run formatter
+## format: Auto-format with stylua
+.PHONY: format
 format:
-	stylua lua/** tests
+	stylua lua/ tests/
