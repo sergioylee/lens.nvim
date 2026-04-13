@@ -10,13 +10,7 @@ describe("lens.nvim", function()
 
   -- Return all extmarks in the test buffer under the lens namespace.
   local function get_marks()
-    return vim.api.nvim_buf_get_extmarks(
-      bufnr,
-      ns,
-      { 0, 0 },
-      { -1, -1 },
-      { details = true }
-    )
+    return vim.api.nvim_buf_get_extmarks(bufnr, ns, { 0, 0 }, { -1, -1 }, { details = true })
   end
 
   -- Call add_highlight_from_visual with mocked vim.fn.mode/getpos so we don't
@@ -173,19 +167,16 @@ describe("lens.nvim", function()
   -- Mode after adding a highlight
   -- ───────────────────────────────────────────────
   describe("mode after adding a highlight", function()
-    it(
-      "returns to normal mode after adding a highlight from visual mode",
-      function()
-        vim.api.nvim_win_set_cursor(0, { 1, 0 })
-        -- Enter real visual mode and select the first word
-        vim.api.nvim_feedkeys("viw", "x", true)
-        assert.equals("v", vim.fn.mode())
-        lens.add_highlight_from_visual()
-        -- Flush the queued <Esc>
-        vim.api.nvim_feedkeys("", "x", false)
-        assert.equals("n", vim.fn.mode())
-      end
-    )
+    it("returns to normal mode after adding a highlight from visual mode", function()
+      vim.api.nvim_win_set_cursor(0, { 1, 0 })
+      -- Enter real visual mode and select the first word
+      vim.api.nvim_feedkeys("viw", "x", true)
+      assert.equals("v", vim.fn.mode())
+      lens.add_highlight_from_visual()
+      -- Flush the queued <Esc>
+      vim.api.nvim_feedkeys("", "x", false)
+      assert.equals("n", vim.fn.mode())
+    end)
   end)
 
   -- ───────────────────────────────────────────────
@@ -209,14 +200,11 @@ describe("lens.nvim", function()
       assert.equals(0, #get_marks())
     end)
 
-    it(
-      "removes the highlight when cursor is at the last included column",
-      function()
-        vim.api.nvim_win_set_cursor(0, { 1, 4 }) -- col 4 < end_col 5
-        lens.remove_highlight_at_cursor()
-        assert.equals(0, #get_marks())
-      end
-    )
+    it("removes the highlight when cursor is at the last included column", function()
+      vim.api.nvim_win_set_cursor(0, { 1, 4 }) -- col 4 < end_col 5
+      lens.remove_highlight_at_cursor()
+      assert.equals(0, #get_marks())
+    end)
 
     it("does not remove when cursor is at the exclusive end column", function()
       vim.api.nvim_win_set_cursor(0, { 1, 5 }) -- col 5 == end_col, out of range
@@ -224,38 +212,32 @@ describe("lens.nvim", function()
       assert.equals(1, #get_marks())
     end)
 
-    it(
-      "does nothing and warns when cursor is on a line with no highlight",
-      function()
-        vim.api.nvim_win_set_cursor(0, { 2, 0 })
-        local warned = capture_warn(function()
-          lens.remove_highlight_at_cursor()
-        end)
-        assert.is_true(warned)
-        assert.equals(1, #get_marks()) -- original still present
-      end
-    )
-
-    it(
-      "only removes the highlight under the cursor, leaving others intact",
-      function()
-        -- Add a second highlight on a different line so range-clear cannot affect it
-        lens.add_highlight(bufnr, 2, 0, 2, 4, "line3_key")
-        assert.equals(2, #get_marks())
-
-        vim.api.nvim_win_set_cursor(0, { 1, 2 }) -- over 'hello_key'
+    it("does nothing and warns when cursor is on a line with no highlight", function()
+      vim.api.nvim_win_set_cursor(0, { 2, 0 })
+      local warned = capture_warn(function()
         lens.remove_highlight_at_cursor()
+      end)
+      assert.is_true(warned)
+      assert.equals(1, #get_marks()) -- original still present
+    end)
 
-        local line3_marks = vim.api.nvim_buf_get_extmarks(
-          bufnr,
-          ns,
-          { 2, 0 },
-          { 2, -1 },
-          { details = true }
-        )
-        assert.equals(1, #line3_marks)
-      end
-    )
+    it("only removes the highlight under the cursor, leaving others intact", function()
+      -- Add a second highlight on a different line so range-clear cannot affect it
+      lens.add_highlight(bufnr, 2, 0, 2, 4, "line3_key")
+      assert.equals(2, #get_marks())
+
+      vim.api.nvim_win_set_cursor(0, { 1, 2 }) -- over 'hello_key'
+      lens.remove_highlight_at_cursor()
+
+      local line3_marks = vim.api.nvim_buf_get_extmarks(
+        bufnr,
+        ns,
+        { 2, 0 },
+        { 2, -1 },
+        { details = true }
+      )
+      assert.equals(1, #line3_marks)
+    end)
   end)
 
   -- ───────────────────────────────────────────────
@@ -279,23 +261,17 @@ describe("lens.nvim", function()
       assert.equals(0, #get_marks())
     end)
 
-    it(
-      "removes when cursor is on the last line within the column range",
-      function()
-        vim.api.nvim_win_set_cursor(0, { 3, 4 }) -- col 4 < end_col 5
-        lens.remove_highlight_at_cursor()
-        assert.equals(0, #get_marks())
-      end
-    )
+    it("removes when cursor is on the last line within the column range", function()
+      vim.api.nvim_win_set_cursor(0, { 3, 4 }) -- col 4 < end_col 5
+      lens.remove_highlight_at_cursor()
+      assert.equals(0, #get_marks())
+    end)
 
-    it(
-      "does not remove when cursor is on the last line past the column range",
-      function()
-        vim.api.nvim_win_set_cursor(0, { 3, 5 }) -- col 5 == end_col, out of range
-        lens.remove_highlight_at_cursor()
-        assert.equals(3, #get_marks()) -- all three line extmarks remain
-      end
-    )
+    it("does not remove when cursor is on the last line past the column range", function()
+      vim.api.nvim_win_set_cursor(0, { 3, 5 }) -- col 5 == end_col, out of range
+      lens.remove_highlight_at_cursor()
+      assert.equals(3, #get_marks()) -- all three line extmarks remain
+    end)
   end)
 
   -- ───────────────────────────────────────────────
@@ -355,20 +331,8 @@ describe("lens.nvim", function()
 
       lens.clear_all()
 
-      local m1 = vim.api.nvim_buf_get_extmarks(
-        bufnr,
-        ns,
-        { 0, 0 },
-        { -1, -1 },
-        {}
-      )
-      local m2 = vim.api.nvim_buf_get_extmarks(
-        buf2,
-        ns,
-        { 0, 0 },
-        { -1, -1 },
-        {}
-      )
+      local m1 = vim.api.nvim_buf_get_extmarks(bufnr, ns, { 0, 0 }, { -1, -1 }, {})
+      local m2 = vim.api.nvim_buf_get_extmarks(buf2, ns, { 0, 0 }, { -1, -1 }, {})
       assert.equals(0, #m1)
       assert.equals(0, #m2)
 
@@ -429,53 +393,38 @@ describe("lens.nvim", function()
       assert.equals(0, #get_marks())
     end)
 
-    it(
-      "two distinct selections on the same line can both be removed",
-      function()
-        -- Add two highlights via add_highlight directly (different keys)
-        -- Note: remove uses nvim_buf_clear_namespace by line range, so removing
-        -- one that shares a line will also clear the other — this test documents
-        -- that known limitation.
-        lens.add_highlight(bufnr, 0, 0, 0, 3, "word1")
-        lens.add_highlight(bufnr, 0, 6, 0, 11, "word2")
-        assert.equals(2, #get_marks())
+    it("removing one same-line highlight leaves the other intact", function()
+      lens.add_highlight(bufnr, 0, 0, 0, 3, "word1")
+      lens.add_highlight(bufnr, 0, 6, 0, 11, "word2")
+      assert.equals(2, #get_marks())
 
-        -- Removing 'word1' clears the whole line range (line 0), which also
-        -- removes 'word2'. This is a known limitation of the range-based clear.
-        vim.api.nvim_win_set_cursor(0, { 1, 1 }) -- over 'word1'
-        lens.remove_highlight_at_cursor()
-        -- After removal, both extmarks on line 0 are gone due to range clear.
-        assert.equals(0, #get_marks())
-      end
-    )
+      vim.api.nvim_win_set_cursor(0, { 1, 1 }) -- over 'word1' (cols 0–2)
+      lens.remove_highlight_at_cursor()
 
-    it(
-      "remove_highlight_at_cursor does not affect a different buffer",
-      function()
-        local buf2 = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_lines(buf2, 0, -1, false, { "other buffer line" })
-        lens.add_highlight(buf2, 0, 0, 0, 5, "buf2_hl")
+      -- Only word1 is removed; word2's extmark on the same line survives.
+      assert.equals(1, #get_marks())
+      local word2_marks = vim.api.nvim_buf_get_extmarks(bufnr, ns, { 0, 6 }, { 0, 11 }, {})
+      assert.equals(1, #word2_marks)
+    end)
 
-        -- Highlight in current buffer at same position
-        lens.add_highlight(bufnr, 0, 0, 0, 5, "buf1_hl")
+    it("remove_highlight_at_cursor does not affect a different buffer", function()
+      local buf2 = vim.api.nvim_create_buf(false, true)
+      vim.api.nvim_buf_set_lines(buf2, 0, -1, false, { "other buffer line" })
+      lens.add_highlight(buf2, 0, 0, 0, 5, "buf2_hl")
 
-        vim.api.nvim_win_set_cursor(0, { 1, 2 }) -- current buf = bufnr
-        lens.remove_highlight_at_cursor()
+      -- Highlight in current buffer at same position
+      lens.add_highlight(bufnr, 0, 0, 0, 5, "buf1_hl")
 
-        -- bufnr highlight gone
-        assert.equals(0, #get_marks())
-        -- buf2 highlight untouched
-        local m2 = vim.api.nvim_buf_get_extmarks(
-          buf2,
-          ns,
-          { 0, 0 },
-          { -1, -1 },
-          {}
-        )
-        assert.equals(1, #m2)
+      vim.api.nvim_win_set_cursor(0, { 1, 2 }) -- current buf = bufnr
+      lens.remove_highlight_at_cursor()
 
-        vim.api.nvim_buf_delete(buf2, { force = true })
-      end
-    )
+      -- bufnr highlight gone
+      assert.equals(0, #get_marks())
+      -- buf2 highlight untouched
+      local m2 = vim.api.nvim_buf_get_extmarks(buf2, ns, { 0, 0 }, { -1, -1 }, {})
+      assert.equals(1, #m2)
+
+      vim.api.nvim_buf_delete(buf2, { force = true })
+    end)
   end)
 end)
